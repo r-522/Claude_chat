@@ -1,6 +1,6 @@
 # Claude Chat on Cloudflare
 
-Cloudflare Workers上で動く、シンプルなClaudeチャットWebアプリです。ブラウザは `/api/chat` を呼び、WorkerがAnthropic Messages APIへリクエストするため、Anthropic APIキーはブラウザへ露出しません。
+Cloudflare Workers上で動く、シンプルなClaudeチャットWebアプリです。ブラウザは `/api/chat` を呼び、WorkerがAnthropic Messages APIへリクエストするため、Anthropic APIキーをクライアント側に公開しません。
 
 ## 使用技術
 
@@ -48,14 +48,18 @@ Cloudflare Dashboardまたは `wrangler secret put ANTHROPIC_API_KEY` で設定�
 モデル表示名と内部IDは `src/models.ts` で分離しています。現在は公式ドキュメント確認時点の以下を使います。
 
 - Haiku 4.5: `claude-haiku-4-5-20251001`
-- Sonnet 5: `claude-sonnet-5`
-- Opus 5: `claude-opus-5`
+- Sonnet 5: `claude-sonnet-5-20241022`
+- Opus 5: `claude-opus-5-20250909`
 
 Anthropic側のモデルIDが変わった場合は `src/models.ts` の `MODELS` を更新してください。
 
 ## Effort設定
 
-Sonnet 5 / Opus 5 は Anthropic API の `effort` に `low` / `medium` / `high` を渡します。Haiku 4.5 は `effort` をサポートしないため、Lowは通常応答、Medium/HighはHaiku 4.5で利用可能な manual extended thinking の `budget_tokens` に変換します。存在しないAPIパラメータは送らないようモデルごとに分岐しています。
+全モデル（Haiku 4.5 / Sonnet 5 / Opus 5）は Anthropic API の `effort` パラメータに `low` / `medium` / `high` を渡します。
+
+- Low: 高速な応答を優先
+- Medium: バランスの取れた応答
+- High: より詳細で思考深い応答
 
 ## 簡易ログイン
 
@@ -65,7 +69,7 @@ Sonnet 5 / Opus 5 は Anthropic API の `effort` に `low` / `medium` / `high` �
 1359
 ```
 
-ログイン状態はブラウザの `localStorage` に有効期限付きで保存します。これはURLを知っている人全員が即使える状態を避けるための簡易アクセス制御であり、本格的な認証ではありません。
+ログイン状態はブラウザの `localStorage` に有効期限付きで保存します。これはURLを知っている人全員が即使える状態を避けるための簡易アクセス制限です。
 
 ## セキュリティ上の注意
 

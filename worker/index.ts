@@ -3,6 +3,7 @@ import { MODELS, type Effort, type ModelKey } from '../src/models';
 type Env = { ANTHROPIC_API_KEY?: string; ASSETS: Fetcher };
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 const effortValues = new Set(['low', 'medium', 'high']);
+const allowedModelIds = new Set(Object.values(MODELS).map(m => m.id));
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -28,15 +29,23 @@ export default {
 
     const selected = body.model && MODELS[body.model];
     if (!selected) return json({ error: '指定されたモデルは利用できません。' }, 400);
+    if (!allowedModelIds.has(selected.id)) return json({ error: '指定されたモデルは許可されていません。' }, 403);
     if (!body.effort || !effortValues.has(body.effort)) return json({ error: '指定されたEffortは利用できません。' }, 400);
+    
     const messages = (body.messages ?? []).filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim());
     if (!messages.length || messages[messages.length - 1].role !== 'user') return json({ error: '送信するメッセージがありません。' }, 400);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
-    const payload: Record<string, unknown> = { model: selected.id, max_tokens: 4096, stream: true, messages };
-    if (selected.supportsEffort) payload.effort = body.effort;
-    else if (body.effort !== 'low') payload.thinking = { type: 'enabled', budget_tokens: body.effort === 'medium' ? 2048 : 4096 };
+    
+    // 全モデルが現在のAPIで effort パラメータをサポート
+    const payload: Record<string, unknown> = { 
+      model: selected.id, 
+      max_tokens: 4096, 
+      stream: true, 
+      messages,
+      effort: body.effort
+    };
 
     try {
       const upstream = await fetch('https://api.anthropic.com/v1/messages', {
@@ -57,7 +66,7 @@ export default {
     } catch (err) {
       clearTimeout(timeout);
       console.error('Chat route failed', err);
-      return json({ error: err instanceof DOMException && err.name === 'AbortError' ? 'Claude APIの応答がタイムアウトしました。' : 'ネットワークエラーが発生しました。' }, err instanceof DOMException && err.name === 'AbortError' ? 504 : 502);
+      return json({ error: err instanceof DOMException && err.name === 'AbortError' ? 'Claude APIの応答がタイムアウトしました。' : 'ネットワークエラーが発生しました。' }, 500);
     }
   },
 };
