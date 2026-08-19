@@ -1,10 +1,10 @@
 export type ModelKey = 'haiku-4.5' | 'sonnet-5' | 'opus-5';
 export type Effort = 'low' | 'medium' | 'high';
 
-export const MODELS: Record<ModelKey, { label: string; id: string; supportsEffort: boolean }> = {
-  'haiku-4.5': { label: 'Haiku 4.5', id: 'claude-haiku-4-5-20251001', supportsEffort: false },
-  'sonnet-5': { label: 'Sonnet 5', id: 'claude-sonnet-5', supportsEffort: true },
-  'opus-5': { label: 'Opus 5', id: 'claude-opus-5', supportsEffort: true },
+export const MODELS: Record<ModelKey, { label: string; id: string }> = {
+  'haiku-4.5': { label: 'Haiku 4.5', id: 'claude-haiku-4-5-20251001' },
+  'sonnet-5': { label: 'Sonnet 5', id: 'claude-sonnet-5-20241022' },
+  'opus-5': { label: 'Opus 5', id: 'claude-opus-5-20250909' },
 };
 
 export const EFFORTS: { label: string; value: Effort }[] = [
